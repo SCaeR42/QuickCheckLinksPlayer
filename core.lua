@@ -177,10 +177,10 @@ hooksecurefunc("UnitPopup_OnClick", function(self)
         ShowUrl(name, server, 'armory');
     end
 
-    local realm, region;
-    realm, region = GetRealm(server);
-    DEFAULT_CHAT_FRAME:AddMessage("User name is: " .. name)
-    DEFAULT_CHAT_FRAME:AddMessage("User realm name is: " .. realm)
+--    local realm, region;
+--    realm, region = GetRealm(server);
+--    DEFAULT_CHAT_FRAME:AddMessage("User name is: " .. name)
+--    DEFAULT_CHAT_FRAME:AddMessage("User realm name is: " .. realm)
 end)
 
 ---------------------------------
@@ -197,9 +197,9 @@ local function ShowUrlLFG(name, type)
         uServer = ''
     end
     ShowUrl(uName, uServer, type);
-    realm, region = GetRealm(uServer);
-    DEFAULT_CHAT_FRAME:AddMessage("User name is: " .. uName)
-    DEFAULT_CHAT_FRAME:AddMessage("User realm name is: " .. realm)
+--    realm, region = GetRealm(uServer);
+--    DEFAULT_CHAT_FRAME:AddMessage("User name is: " .. uName)
+--    DEFAULT_CHAT_FRAME:AddMessage("User realm name is: " .. realm)
 end
 
 -- Поиск участников группы

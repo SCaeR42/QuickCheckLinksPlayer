@@ -2,7 +2,7 @@
 ## Interface: 30000
 ## Title: QuickCheckLinksPlayer
 ## Notes: Adds Url check to player to player popup menus.
-## Version: 1.0
+## Version: 1.1
 
 ## Notes-ruRU: Добавляет сылки на профиль игрока на сайтых статистики.
 ## Title-ruRU: QruickCheckLinksPlayer
