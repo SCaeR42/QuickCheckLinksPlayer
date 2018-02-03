@@ -4,15 +4,25 @@ local addonName, addonTable, CURRENT_NAME, CURRENT_SERVER = ...
 local L = addonTable.L
 local LRI = LibStub:GetLibrary("LibRealmInfo");
 
+---------------------------------
+-- for LFG
+---------------------------------
+
 -- wp link
 UnitPopupButtons["QCLP_LINK_WP"] = {
-    text = L.WPLINK,
+    text = L.WPLINKCOLOR,
     dist = 0,
     disabledInKioskMode = true,
 };
 -- armory link
 UnitPopupButtons["QCLP_LINK_ARMORY"] = {
-    text = L.ARMORYLINK,
+    text = L.ARMORYLINKCOLOR,
+    dist = 0,
+    disabledInKioskMode = true,
+};
+-- raoider.io link
+UnitPopupButtons["QCLP_LINK_RAIDERIO"] = {
+    text = L.RAIDERIOLINKCOLOR,
     dist = 0,
     disabledInKioskMode = true,
 };
@@ -28,6 +38,7 @@ UnitPopupButtons["QCLP_MENU"] = {
 UnitPopupMenus["QCLP_MENU"] = {
     'QCLP_LINK_WP',
     'QCLP_LINK_ARMORY',
+    'QCLP_LINK_RAIDERIO',
 };
 
 table.insert(UnitPopupMenus["PARTY"], #(UnitPopupMenus["PARTY"]), "QCLP_MENU");
@@ -46,10 +57,11 @@ table.insert(UnitPopupMenus["CHAT_ROSTER"], #(UnitPopupMenus["CHAT_ROSTER"]), "Q
 -- Get realm info
 local function GetRealm(server)
     if not server or server == "" then server = GetRealmName() end
-    local _, realm, _, _, _, _, region = LRI:GetRealmInfo(server)
+    local id, realm, api_name, rules, locale, battlegroup, region, _, _, latin_name, latin_api_name = LRI:GetRealmInfo(server)
+
     realm = realm:gsub("'", "");
     realm = realm:gsub(" ", "-");
-    return realm, region
+    return realm, region, latin_name
 end
 
 -- Default type link
@@ -83,11 +95,28 @@ local function constructUrlArmory(name, server)
     return url;
 end
 
+-- build url to raider.io site
+local function constructUrlRaiderio(name, server)
+    if not name or name == "" then return end
+    local realm, region, url, server_latin_name;
+    realm, region, server_latin_name = GetRealm(server);
+    --    https://raider.io/characters/REGION/REALM/NAME
+    region = string.lower(region);
+
+    if not server_latin_name then
+        server_latin_name = realm
+    end
+
+    server_latin_name = string.lower(server_latin_name);
+    url = "//raider.io/characters/" .. region .. "/" .. server_latin_name .. "/" .. name;
+    return url;
+end
+
 ---------------------------------
 -- core func
 ---------------------------------
 
--- Sgow link
+-- Show link
 local function ShowUrl(name, server, type)
     if not name then return end
     type = getType(type);
@@ -96,6 +125,8 @@ local function ShowUrl(name, server, type)
         url = constructUrlWp(name, server);
     elseif type == "armory" then
         url = constructUrlArmory(name, server);
+    elseif type == "raiderio" then
+        url = constructUrlRaiderio(name, server);
     end
     if url then
         local edit_box = ChatEdit_ChooseBoxForSend()
@@ -176,6 +207,9 @@ hooksecurefunc("UnitPopup_OnClick", function(self)
     if self.value == "QCLP_LINK_ARMORY" then
         ShowUrl(name, server, 'armory');
     end
+    if self.value == "QCLP_LINK_RAIDERIO" then
+        ShowUrl(name, server, 'raiderio');
+    end
 end)
 
 ---------------------------------
@@ -185,16 +219,18 @@ end)
 -- Show url for LFG
 local function ShowUrlLFG(name, type)
     local realm, region, uName, uServer;
-    if not name then return end
+
+    if not name then return end;
+
     uName = gsub(name, "%-[^|]+", "");
     uServer = gsub(name, "[^|]+%-", "");
---[[
+    --[[
 
-    print('name= ' .. name);
-    print('type= ' .. type);
-    print('uName= ' .. uName);
-    print('uServer= ' .. uServer);
-]]
+        print('name= ' .. name);
+        print('type= ' .. type);
+        print('uName= ' .. uName);
+        print('uServer= ' .. uServer);
+    ]]
 
     if uName == uServer then
         uServer = ''
@@ -223,7 +259,7 @@ local LFG_LIST_APPLICANT_MEMBER_MENU = {
         menuList = {
             -- Link to WP menu utem
             {
-                text = L.WPLINK,
+                text = L.WPLINKCOLOR,
                 func = function(_, name) ShowUrlLFG(name, 'wp'); end,
                 notCheckable = true,
                 arg1 = nil, --Player name goes here
@@ -231,8 +267,16 @@ local LFG_LIST_APPLICANT_MEMBER_MENU = {
             },
             -- Link to Armory menu utem
             {
-                text = L.ARMORYLINK,
+                text = L.ARMORYLINKCOLOR,
                 func = function(_, name) ShowUrlLFG(name, 'armory'); end,
+                notCheckable = true,
+                arg1 = nil, --Player name goes here
+                disabled = nil, --Disabled if we don't have a name yet
+            },
+            -- Link to raider.io menu utem
+            {
+                text = L.RAIDERIOLINKCOLOR,
+                func = function(_, name) ShowUrlLFG(name, 'raiderio'); end,
                 notCheckable = true,
                 arg1 = nil, --Player name goes here
                 disabled = nil, --Disabled if we don't have a name yet
@@ -283,6 +327,8 @@ function LFGListUtil_GetApplicantMemberMenu(applicantID, memberIdx)
     LFG_LIST_APPLICANT_MEMBER_MENU[3].menuList[1].disabled = not name or (status ~= "applied" and status ~= "invited");
     LFG_LIST_APPLICANT_MEMBER_MENU[3].menuList[2].arg1 = name;
     LFG_LIST_APPLICANT_MEMBER_MENU[3].menuList[2].disabled = not name or (status ~= "applied" and status ~= "invited");
+    LFG_LIST_APPLICANT_MEMBER_MENU[3].menuList[3].arg1 = name;
+    LFG_LIST_APPLICANT_MEMBER_MENU[3].menuList[3].disabled = not name or (status ~= "applied" and status ~= "invited");
     LFG_LIST_APPLICANT_MEMBER_MENU[4].menuList[1].arg1 = applicantID;
     LFG_LIST_APPLICANT_MEMBER_MENU[4].menuList[1].arg2 = memberIdx;
     LFG_LIST_APPLICANT_MEMBER_MENU[4].menuList[2].arg1 = applicantID;
@@ -317,7 +363,7 @@ local LFG_LIST_SEARCH_ENTRY_MENU = {
         menuList = {
             -- Link to WP menu utem
             {
-                text = L.WPLINK,
+                text = L.WPLINKCOLOR,
                 func = function(_, name) ShowUrlLFG(name, 'wp'); end,
                 notCheckable = true,
                 arg1 = nil, --Player name goes here
@@ -325,8 +371,16 @@ local LFG_LIST_SEARCH_ENTRY_MENU = {
             },
             -- Link to Armory menu utem
             {
-                text = L.ARMORYLINK,
+                text = L.ARMORYLINKCOLOR,
                 func = function(_, name) ShowUrlLFG(name, 'armory'); end,
+                notCheckable = true,
+                arg1 = nil, --Player name goes here
+                disabled = nil, --Disabled if we don't have a name yet
+            },
+            -- Link to raider.io menu utem
+            {
+                text = L.RAIDERIOLINKCOLOR,
+                func = function(_, name) ShowUrlLFG(name, 'raiderio'); end,
                 notCheckable = true,
                 arg1 = nil, --Player name goes here
                 disabled = nil, --Disabled if we don't have a name yet
@@ -386,6 +440,8 @@ function LFGListUtil_GetSearchEntryMenu(resultID)
     LFG_LIST_SEARCH_ENTRY_MENU[3].menuList[1].disabled = not leaderName;
     LFG_LIST_SEARCH_ENTRY_MENU[3].menuList[2].arg1 = leaderName;
     LFG_LIST_SEARCH_ENTRY_MENU[3].menuList[2].disabled = not leaderName;
+    LFG_LIST_SEARCH_ENTRY_MENU[3].menuList[3].arg1 = leaderName;
+    LFG_LIST_SEARCH_ENTRY_MENU[3].menuList[3].disabled = not leaderName;
     LFG_LIST_SEARCH_ENTRY_MENU[4].menuList[1].arg1 = resultID;
     LFG_LIST_SEARCH_ENTRY_MENU[4].menuList[2].arg1 = resultID;
     LFG_LIST_SEARCH_ENTRY_MENU[4].menuList[2].disabled = (comment == "");

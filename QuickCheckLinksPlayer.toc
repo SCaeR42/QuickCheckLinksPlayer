@@ -1,8 +1,8 @@
 ## Author: CaSPeR
 ## Interface: 30000
 ## Title: QuickCheckLinksPlayer
-## Notes: Adds Url check to player to player popup menus.
-## Version: 1.2
+## Notes: Adds links to the player's popup menu
+## Version: 1.3
 
 ## Notes-ruRU: Добавляет сылки на профиль игрока на сайтых статистики.
 ## Title-ruRU: QruickCheckLinksPlayer
